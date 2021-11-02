@@ -1,0 +1,7 @@
+<Root module="tobster">
+    <Func name="ZdraveitePriqteliAzSumTobstera">
+        <Print format="%s\n">
+            <String>Hello, world!</String>
+        </Print>
+    </Func>
+</Root>
