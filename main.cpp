@@ -209,6 +209,27 @@ auto compile_program(boost::property_tree::ptree const& tree) {
                 auto var = named_values[name];
 
                 ret.push_back(builder.CreateLoad(var));
+            } else if (node.first == "Add") {
+                auto values = recurse_tree(node.second);
+                assert(values.size() >= 2);
+
+                llvm::Value* sum = builder.CreateAdd(values[0], values[1]);
+                for (auto i = 2; i < values.size(); ++i) {
+                    sum = builder.CreateAdd(sum, values[i]);
+                }
+
+                ret.push_back(sum);
+            } else if (node.first == "Sub") {
+                auto values = recurse_tree(node.second);
+                assert(values.size() >= 2);
+
+                llvm::Value* difference =
+                    builder.CreateSub(values[0], values[1]);
+                for (auto i = 2; i < values.size(); ++i) {
+                    difference = builder.CreateSub(difference, values[i]);
+                }
+
+                ret.push_back(difference);
             }
         }
 
