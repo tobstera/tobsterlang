@@ -16,7 +16,8 @@
 static llvm::LLVMContext llvm_context;
 static llvm::IRBuilder<> builder(llvm_context);
 
-// Unescapes a string literal.
+static std::unordered_map<std::string, llvm::AllocaInst*> named_values;
+
 auto unescape(std::string const& str) {
     std::string result;
     result.reserve(str.size());
@@ -75,6 +76,14 @@ auto parse_program(std::string const& filename) {
     boost::property_tree::read_xml(filename, tree);
 
     return tree;
+}
+
+auto get_type_by_name(std::string const& name) {
+    if (name == "Int32") {
+        return llvm::Type::getInt32Ty(llvm_context);
+    }
+
+    assert(0 && "unknown type");
 }
 
 auto compile_program(boost::property_tree::ptree const& tree) {
@@ -146,6 +155,60 @@ auto compile_program(boost::property_tree::ptree const& tree) {
                 auto value_str = builder.CreateGlobalStringPtr(value);
 
                 ret.push_back(value_str);
+            } else if (node.first == "Var") {
+                // TODO: Global variables
+                auto name = node.second.get_child("<xmlattr>.name").data();
+
+                auto children = recurse_tree(node.second);
+                assert(children.size() <= 1);
+
+                auto initial_value =
+                    children.size() == 1 ? children[0] : nullptr;
+
+                auto type_node =
+                    node.second.get_child_optional("<xmlattr>.type");
+
+                // TODO: If type is passed, check if it's correct
+                llvm::Type* type =
+                    initial_value ? initial_value->getType() : nullptr;
+
+                if (type_node) {
+                    type = get_type_by_name(type_node.get().data());
+                }
+
+                assert(type);
+
+                auto var = builder.CreateAlloca(type);
+                if (initial_value) {
+                    builder.CreateStore(initial_value, var);
+                }
+
+                // TODO: We should handle variable shadowing in the future
+                named_values[name] = var;
+            } else if (node.first == "Value") {
+                auto type_name = node.second.get_child("<xmlattr>.type").data();
+                auto value = node.second.data();
+
+                // TODO: Figure out a better way to do this
+                if (type_name == "Int32") {
+                    ret.push_back(llvm::ConstantInt::get(
+                        llvm_context, llvm::APInt(32, value, 10)));
+                } else {
+                    assert(0 && "unknown type");
+                }
+            } else if (node.first == "Store") {
+                auto name = node.second.get_child("<xmlattr>.name").data();
+                auto var = named_values[name];
+
+                auto children = recurse_tree(node.second);
+                assert(children.size() == 1);
+
+                builder.CreateStore(children[0], var);
+            } else if (node.first == "Load") {
+                auto name = node.second.get_child("<xmlattr>.name").data();
+                auto var = named_values[name];
+
+                ret.push_back(builder.CreateLoad(var));
             }
         }
 
@@ -244,7 +307,7 @@ auto compile_module(std::unique_ptr<llvm::Module> module,
 }
 
 int main() {
-    auto tree = parse_program("../hello.xml");
+    auto tree = parse_program("../examples/var.xml");
     auto module = compile_program(tree);
 
     std::string object_file =
