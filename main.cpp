@@ -78,9 +78,11 @@ auto parse_program(std::string const& filename) {
     return tree;
 }
 
-auto get_type_by_name(std::string const& name) {
+auto get_type_by_name(std::string const& name) -> llvm::Type* {
     if (name == "Int32") {
         return llvm::Type::getInt32Ty(llvm_context);
+    } else if (name == "String") {
+        return llvm::Type::getInt8PtrTy(llvm_context);
     }
 
     assert(0 && "unknown type");
@@ -150,11 +152,6 @@ auto compile_program(boost::property_tree::ptree const& tree) {
                 printf_call_args.insert(printf_call_args.begin(), format_str);
 
                 builder.CreateCall(printf_func, printf_call_args);
-            } else if (node.first == "String") {
-                auto value = node.second.data();
-                auto value_str = builder.CreateGlobalStringPtr(value);
-
-                ret.push_back(value_str);
             } else if (node.first == "Var") {
                 // TODO: Global variables
                 auto name = node.second.get_child("<xmlattr>.name").data();
@@ -193,6 +190,8 @@ auto compile_program(boost::property_tree::ptree const& tree) {
                 if (type_name == "Int32") {
                     ret.push_back(llvm::ConstantInt::get(
                         llvm_context, llvm::APInt(32, value, 10)));
+                } else if (type_name == "String") {
+                    ret.push_back(builder.CreateGlobalStringPtr(value));
                 } else {
                     assert(0 && "unknown type");
                 }
