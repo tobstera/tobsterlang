@@ -1,0 +1,23 @@
+<Root module="variables">
+    <Func name="ZdraveitePriqteliAzSumTobstera">
+        <Var name="x" type="Int32"/>
+        <Store name="x">
+            <Value type="Int32">35</Value>
+        </Store>
+        <Var name="y">
+            <Value type="Int32">35</Value>
+        </Var>
+        <Var name="z">
+            <Value type="Int32">1</Value>
+        </Var>
+        <Print format="%d\n">
+            <Sub>
+                <Add>
+                    <Load name="x"/>
+                    <Load name="y"/>
+                </Add>
+                <Load name="z"/>
+            </Sub>
+        </Print>
+    </Func>
+</Root>
