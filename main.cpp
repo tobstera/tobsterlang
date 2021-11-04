@@ -306,8 +306,15 @@ auto compile_module(std::unique_ptr<llvm::Module> module,
     dest.flush();
 }
 
-int main() {
-    auto tree = parse_program("../examples/var.xml");
+int main(int argc, char** argv) {
+    // TODO: Use some argument parser
+    if (argc != 2) {
+        return 1;
+    }
+
+    auto source_filename = std::string(argv[1]);
+
+    auto tree = parse_program(source_filename);
     auto module = compile_program(tree);
 
     std::string object_file =
