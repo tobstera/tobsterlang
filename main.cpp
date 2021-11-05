@@ -120,17 +120,41 @@ auto compile_program(pt::ptree const& tree) {
 
         for (auto& [node_name, subtree] : tree) {
             if (node_name == "Func") {
-                auto func_name = subtree.get_child("<xmlattr>.name").data();
+                std::string func_name;
+
+                std::vector<std::string> argument_names;
+                std::vector<llvm::Type*> argument_types;
+
+                for (auto& [argument_name, argument_node] :
+                     subtree.get_child("<xmlattr>")) {
+                    auto argument_value = argument_node.data();
+
+                    if (argument_name == "name") {
+                        func_name = argument_value;
+
+                        continue;
+                    }
+
+                    auto argument_type = get_type_by_name(argument_value);
+
+                    argument_names.push_back(argument_name);
+                    argument_types.push_back(argument_type);
+                }
+
                 if (func_name == "ZdraveitePriqteliAzSumTobstera") {
                     func_name = "main";
                 }
 
-                // TODO: Figure out how to define arguments
                 auto func_type = llvm::FunctionType::get(
-                    llvm::Type::getVoidTy(llvm_context), {}, false);
+                    llvm::Type::getVoidTy(llvm_context), argument_types, false);
+
                 auto func = llvm::Function::Create(
                     func_type, llvm::Function::ExternalLinkage, func_name,
                     module.get());
+
+                for (auto i = 0; i < argument_names.size(); ++i) {
+                    func->getArg(i)->setName(argument_names[i]);
+                }
 
                 auto func_body =
                     llvm::BasicBlock::Create(llvm_context, "entry", func);
