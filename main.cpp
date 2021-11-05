@@ -10,8 +10,11 @@
 #include <llvm/Support/TargetRegistry.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Target/TargetMachine.h>
+#include <boost/program_options.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <iostream>
+
+namespace po = boost::program_options;
 
 static llvm::LLVMContext llvm_context;
 static llvm::IRBuilder<> builder(llvm_context);
@@ -318,18 +321,39 @@ auto compile_module(std::unique_ptr<llvm::Module> module,
 }
 
 int main(int argc, char** argv) {
-    // TODO: Use some argument parser
-    if (argc != 2) {
-        return 1;
+    auto options_description = po::options_description("options");
+
+    auto positional_options_description = po::positional_options_description();
+    positional_options_description.add("input-file", -1);
+
+    auto opt_adder = options_description.add_options();
+
+    opt_adder("help,h", "print help message");
+    opt_adder("output,o", po::value<std::string>(), "output file");
+    opt_adder("input-file", po::value<std::string>(), "input file");
+
+    po::variables_map args;
+    po::store(boost::program_options::command_line_parser(argc, argv)
+                  .options(options_description)
+                  .positional(positional_options_description)
+                  .run(),
+              args);
+
+    if (args.count("help")) {
+        std::cout << options_description << std::endl;
+
+        return 0;
     }
 
-    auto source_filename = std::string(argv[1]);
+    auto input_file = args["input-file"].as<std::string>();
 
-    auto tree = parse_program(source_filename);
+    auto tree = parse_program(input_file);
     auto module = compile_program(tree);
 
     std::string object_file =
-        "../" + std::string(module->getName().data()) + ".o";
+        args.count("output")
+            ? args["output"].as<std::string>()
+            : "./" + std::string(module->getName().data()) + ".o";
 
     compile_module(std::move(module), object_file);
 
