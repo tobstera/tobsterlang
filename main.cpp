@@ -78,17 +78,20 @@ auto parse_program(std::string const& filename) {
     return tree;
 }
 
+typedef llvm::Type* (*type_factory_t)(llvm::LLVMContext&);
+
+auto type_by_name = std::unordered_map<std::string, type_factory_t>{
+    {"Int8", reinterpret_cast<type_factory_t>(llvm::Type::getInt8Ty)},
+    {"Int16", reinterpret_cast<type_factory_t>(llvm::Type::getInt16Ty)},
+    {"Int32", reinterpret_cast<type_factory_t>(llvm::Type::getInt32Ty)},
+    {"Int64", reinterpret_cast<type_factory_t>(llvm::Type::getInt64Ty)},
+    {"String", reinterpret_cast<type_factory_t>(llvm::Type::getInt8PtrTy)},
+};
+
 auto get_type_by_name(std::string const& name) -> llvm::Type* {
-    if (name == "Int8") {
-        return llvm::Type::getInt8Ty(llvm_context);
-    } else if (name == "Int16") {
-        return llvm::Type::getInt16Ty(llvm_context);
-    } else if (name == "Int32") {
-        return llvm::Type::getInt32Ty(llvm_context);
-    } else if (name == "Int64") {
-        return llvm::Type::getInt64Ty(llvm_context);
-    } else if (name == "String") {
-        return llvm::Type::getInt8PtrTy(llvm_context);
+    auto type = type_by_name[name];
+    if (type) {
+        return type(llvm_context);
     }
 
     assert(0 && "unknown type");
