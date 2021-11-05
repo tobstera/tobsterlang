@@ -112,9 +112,9 @@ auto compile_program(boost::property_tree::ptree const& tree) {
 
         std::vector<llvm::Value*> ret;
 
-        for (auto& node : tree) {
-            if (node.first == "Func") {
-                auto func_name = node.second.get_child("<xmlattr>.name").data();
+        for (auto& [node_name, subtree] : tree) {
+            if (node_name == "Func") {
+                auto func_name = subtree.get_child("<xmlattr>.name").data();
                 if (func_name == "ZdraveitePriqteliAzSumTobstera") {
                     func_name = "main";
                 }
@@ -131,13 +131,13 @@ auto compile_program(boost::property_tree::ptree const& tree) {
 
                 builder.SetInsertPoint(func_body);
 
-                recurse_tree(node.second);
+                recurse_tree(subtree);
 
                 builder.CreateRet(nullptr);
 
                 ret.push_back(func);
-            } else if (node.first == "Print") {
-                auto format = node.second.get_child("<xmlattr>.format").data();
+            } else if (node_name == "Print") {
+                auto format = subtree.get_child("<xmlattr>.format").data();
                 auto format_str =
                     builder.CreateGlobalStringPtr(unescape(format));
 
@@ -157,24 +157,24 @@ auto compile_program(boost::property_tree::ptree const& tree) {
                     printf_func->setCallingConv(llvm::CallingConv::C);
                 }
 
-                auto printf_call_args = recurse_tree(node.second);
+                auto printf_call_args = recurse_tree(subtree);
                 printf_call_args.insert(printf_call_args.begin(), format_str);
 
                 builder.CreateCall(printf_func, printf_call_args);
-            } else if (node.first == "Var") {
+            } else if (node_name == "Var") {
                 // TODO: Global variables
-                auto name = node.second.get_child("<xmlattr>.name").data();
+                auto name = subtree.get_child("<xmlattr>.name").data();
 
-                auto type_node = node.second.get_child("<xmlattr>.type");
+                auto type_node = subtree.get_child("<xmlattr>.type");
                 auto type = get_type_by_name(type_node.data());
 
                 auto var = builder.CreateAlloca(type);
 
                 // TODO: We should handle variable shadowing in the future
                 named_values[name] = var;
-            } else if (node.first == "Value") {
-                auto type_name = node.second.get_child("<xmlattr>.type").data();
-                auto value = node.second.data();
+            } else if (node_name == "Value") {
+                auto type_name = subtree.get_child("<xmlattr>.type").data();
+                auto value = subtree.data();
 
                 auto type = get_type_by_name(type_name);
                 if (type->isIntegerTy()) {
@@ -186,21 +186,21 @@ auto compile_program(boost::property_tree::ptree const& tree) {
                 } else {
                     assert(0 && "unknown type");
                 }
-            } else if (node.first == "Store") {
-                auto name = node.second.get_child("<xmlattr>.name").data();
+            } else if (node_name == "Store") {
+                auto name = subtree.get_child("<xmlattr>.name").data();
                 auto var = named_values[name];
 
-                auto children = recurse_tree(node.second);
+                auto children = recurse_tree(subtree);
                 assert(children.size() == 1);
 
                 builder.CreateStore(children[0], var);
-            } else if (node.first == "Load") {
-                auto name = node.second.get_child("<xmlattr>.name").data();
+            } else if (node_name == "Load") {
+                auto name = subtree.get_child("<xmlattr>.name").data();
                 auto var = named_values[name];
 
                 ret.push_back(builder.CreateLoad(var));
-            } else if (node.first == "Add") {
-                auto values = recurse_tree(node.second);
+            } else if (node_name == "Add") {
+                auto values = recurse_tree(subtree);
                 assert(values.size() >= 2);
 
                 llvm::Value* sum = builder.CreateAdd(values[0], values[1]);
@@ -209,8 +209,8 @@ auto compile_program(boost::property_tree::ptree const& tree) {
                 }
 
                 ret.push_back(sum);
-            } else if (node.first == "Sub") {
-                auto values = recurse_tree(node.second);
+            } else if (node_name == "Sub") {
+                auto values = recurse_tree(subtree);
                 assert(values.size() >= 2);
 
                 llvm::Value* difference =
