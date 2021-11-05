@@ -1,3 +1,6 @@
+#ifndef NDEBUG
+#include <llvm/IR/IRPrintingPasses.h>
+#endif
 #include <llvm/Analysis/CGSCCPassManager.h>
 #include <llvm/Analysis/LoopAnalysisManager.h>
 #include <llvm/IR/IRBuilder.h>
@@ -314,6 +317,10 @@ auto compile_module(std::unique_ptr<llvm::Module> module,
     }
 
     llvm::legacy::PassManager pass;
+#ifndef NDEBUG
+    pass.add(llvm::createPrintModulePass(llvm::outs()));
+#endif
+
     auto filetype = llvm::CGFT_ObjectFile;
 
     if (target_machine->addPassesToEmitFile(pass, dest, nullptr, filetype)) {
