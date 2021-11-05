@@ -347,6 +347,10 @@ auto get_optimization_level(std::string const& level) {
         return llvm::PassBuilder::OptimizationLevel::O2;
     } else if (level == "3") {
         return llvm::PassBuilder::OptimizationLevel::O3;
+    } else if (level == "s") {
+        return llvm::PassBuilder::OptimizationLevel::Os;
+    } else if (level == "z") {
+        return llvm::PassBuilder::OptimizationLevel::Oz;
     }
 
     return llvm::PassBuilder::OptimizationLevel::O0;
