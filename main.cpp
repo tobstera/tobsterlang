@@ -79,8 +79,14 @@ auto parse_program(std::string const& filename) {
 }
 
 auto get_type_by_name(std::string const& name) -> llvm::Type* {
-    if (name == "Int32") {
+    if (name == "Int8") {
+        return llvm::Type::getInt8Ty(llvm_context);
+    } else if (name == "Int16") {
+        return llvm::Type::getInt16Ty(llvm_context);
+    } else if (name == "Int32") {
         return llvm::Type::getInt32Ty(llvm_context);
+    } else if (name == "Int64") {
+        return llvm::Type::getInt64Ty(llvm_context);
     } else if (name == "String") {
         return llvm::Type::getInt8PtrTy(llvm_context);
     }
@@ -186,10 +192,11 @@ auto compile_program(boost::property_tree::ptree const& tree) {
                 auto type_name = node.second.get_child("<xmlattr>.type").data();
                 auto value = node.second.data();
 
-                // TODO: Figure out a better way to do this
-                if (type_name == "Int32") {
+                auto type = get_type_by_name(type_name);
+                if (type->isIntegerTy()) {
                     ret.push_back(llvm::ConstantInt::get(
-                        llvm_context, llvm::APInt(32, value, 10)));
+                        llvm_context,
+                        llvm::APInt(type->getIntegerBitWidth(), value, 10)));
                 } else if (type_name == "String") {
                     ret.push_back(builder.CreateGlobalStringPtr(value));
                 } else {
