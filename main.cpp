@@ -165,29 +165,10 @@ auto compile_program(boost::property_tree::ptree const& tree) {
                 // TODO: Global variables
                 auto name = node.second.get_child("<xmlattr>.name").data();
 
-                auto children = recurse_tree(node.second);
-                assert(children.size() <= 1);
-
-                auto initial_value =
-                    children.size() == 1 ? children[0] : nullptr;
-
-                auto type_node =
-                    node.second.get_child_optional("<xmlattr>.type");
-
-                // TODO: If type is passed, check if it's correct
-                llvm::Type* type =
-                    initial_value ? initial_value->getType() : nullptr;
-
-                if (type_node) {
-                    type = get_type_by_name(type_node.get().data());
-                }
-
-                assert(type);
+                auto type_node = node.second.get_child("<xmlattr>.type");
+                auto type = get_type_by_name(type_node.data());
 
                 auto var = builder.CreateAlloca(type);
-                if (initial_value) {
-                    builder.CreateStore(initial_value, var);
-                }
 
                 // TODO: We should handle variable shadowing in the future
                 named_values[name] = var;
