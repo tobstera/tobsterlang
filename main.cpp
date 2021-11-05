@@ -234,7 +234,12 @@ auto compile_program(pt::ptree const& tree) {
     return module;
 }
 
-auto optimize_module(llvm::Module& module) {
+auto optimize_module(llvm::Module& module,
+                     llvm::PassBuilder::OptimizationLevel optimization_level) {
+    if (optimization_level == llvm::PassBuilder::OptimizationLevel::O0) {
+        return;
+    }
+
     llvm::LoopAnalysisManager loop_analysis_manager;
     llvm::FunctionAnalysisManager function_analysis_manager;
     llvm::CGSCCAnalysisManager cgscc_analysis_manager;
@@ -254,14 +259,14 @@ auto optimize_module(llvm::Module& module) {
         cgscc_analysis_manager, module_analysis_manager);
 
     llvm::ModulePassManager pass_manager =
-        pass_builder.buildPerModuleDefaultPipeline(
-            llvm::PassBuilder::OptimizationLevel::O3);
+        pass_builder.buildPerModuleDefaultPipeline(optimization_level);
 
     pass_manager.run(module, module_analysis_manager);
 }
 
 auto compile_module(std::unique_ptr<llvm::Module> module,
-                    std::string const& filename) {
+                    std::string const& filename,
+                    llvm::PassBuilder::OptimizationLevel optimization_level) {
     auto target_triple = llvm::sys::getDefaultTargetTriple();
 
     llvm::InitializeAllTargetInfos();
@@ -298,7 +303,7 @@ auto compile_module(std::unique_ptr<llvm::Module> module,
     module->setTargetTriple(target_triple);
     module->setDataLayout(target_machine->createDataLayout());
 
-    optimize_module(*module);
+    optimize_module(*module, optimization_level);
 
     std::error_code error_code;
     llvm::raw_fd_ostream dest(filename, error_code, llvm::sys::fs::OF_None);
@@ -320,22 +325,44 @@ auto compile_module(std::unique_ptr<llvm::Module> module,
     dest.flush();
 }
 
+auto parse_optimization_level(std::string const& s) {
+    if (s.find("-O") == 0) {
+        return std::make_pair(std::string("optimization"), s.substr(2));
+    }
+
+    return std::make_pair(std::string(), std::string());
+}
+
+auto get_optimization_level(std::string const& level) {
+    if (level == "1") {
+        return llvm::PassBuilder::OptimizationLevel::O1;
+    } else if (level == "2") {
+        return llvm::PassBuilder::OptimizationLevel::O2;
+    } else if (level == "3") {
+        return llvm::PassBuilder::OptimizationLevel::O3;
+    }
+
+    return llvm::PassBuilder::OptimizationLevel::O0;
+}
+
 int main(int argc, char** argv) {
     auto options_description = po::options_description("options");
-
-    auto positional_options_description = po::positional_options_description();
-    positional_options_description.add("input-file", -1);
 
     auto opt_adder = options_description.add_options();
 
     opt_adder("help,h", "print help message");
+    opt_adder("optimization,O", po::value<std::string>(), "optimization level");
     opt_adder("output,o", po::value<std::string>(), "output file");
     opt_adder("input-file", po::value<std::string>(), "input file");
+
+    auto positional_options_description = po::positional_options_description();
+    positional_options_description.add("input-file", -1);
 
     po::variables_map args;
     po::store(boost::program_options::command_line_parser(argc, argv)
                   .options(options_description)
                   .positional(positional_options_description)
+                  .extra_parser(parse_optimization_level)
                   .run(),
               args);
 
@@ -355,7 +382,10 @@ int main(int argc, char** argv) {
             ? args["output"].as<std::string>()
             : "./" + std::string(module->getName().data()) + ".o";
 
-    compile_module(std::move(module), object_file);
+    auto optimization_level =
+        get_optimization_level(args["optimization"].as<std::string>());
+
+    compile_module(std::move(module), object_file, optimization_level);
 
     return 0;
 }
