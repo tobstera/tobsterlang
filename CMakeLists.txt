@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 project(tobsterlang)
 
-find_package(Boost)
+find_package(Boost COMPONENTS program_options)
 find_package(LLVM REQUIRED CONFIG)
 
 include_directories(${LLVM_INCLUDE_DIRS})
@@ -13,4 +13,4 @@ set(CMAKE_CXX_STANDARD 17)
 
 add_executable(tobsterlang main.cpp)
 
-target_link_libraries(tobsterlang "LLVM-${LLVM_PACKAGE_VERSION}")
+target_link_libraries(tobsterlang ${Boost_LIBRARIES} "LLVM-${LLVM_PACKAGE_VERSION}")
