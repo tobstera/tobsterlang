@@ -14,6 +14,7 @@
 #include <boost/property_tree/xml_parser.hpp>
 #include <iostream>
 
+namespace pt = boost::property_tree;
 namespace po = boost::program_options;
 
 static llvm::LLVMContext llvm_context;
@@ -75,8 +76,8 @@ auto unescape(std::string const& str) {
 }
 
 auto parse_program(std::string const& filename) {
-    boost::property_tree::ptree tree;
-    boost::property_tree::read_xml(filename, tree);
+    pt::ptree tree;
+    pt::read_xml(filename, tree);
 
     return tree;
 }
@@ -100,15 +101,14 @@ auto get_type_by_name(std::string const& name) -> llvm::Type* {
     assert(0 && "unknown type");
 }
 
-auto compile_program(boost::property_tree::ptree const& tree) {
+auto compile_program(pt::ptree const& tree) {
     auto root_node = tree.get_child("Root");
     auto module_name = root_node.get_child("<xmlattr>.module").data();
 
     auto module = std::make_unique<llvm::Module>(module_name, llvm_context);
 
-    std::function<std::vector<llvm::Value*>(boost::property_tree::ptree const&)>
-        recurse_tree = [&](boost::property_tree::ptree const& tree)
-        -> std::vector<llvm::Value*> {
+    std::function<std::vector<llvm::Value*>(pt::ptree const&)> recurse_tree =
+        [&](pt::ptree const& tree) -> std::vector<llvm::Value*> {
         if (tree.empty()) {
             return {};
         }
