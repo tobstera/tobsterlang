@@ -4,12 +4,17 @@
         <Store name="x">
             <Value type="Int32">35</Value>
         </Store>
-        <Var name="y">
+
+        <Var name="y" type="Int32"/>
+        <Store name="y">
             <Value type="Int32">35</Value>
-        </Var>
-        <Var name="z">
+        </Store>
+
+        <Var name="z" type="Int32"/>
+        <Store name="z">
             <Value type="Int32">1</Value>
-        </Var>
+        </Store>
+
         <Print format="%d\n">
             <Sub>
                 <Add>
