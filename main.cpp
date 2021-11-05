@@ -364,10 +364,10 @@ int main(int argc, char** argv) {
     opt_adder("help,h", "print help message");
     opt_adder("optimization,O", po::value<std::string>(), "optimization level");
     opt_adder("output,o", po::value<std::string>(), "output file");
-    opt_adder("input-file", po::value<std::string>(), "input file");
+    opt_adder("input", po::value<std::string>(), "input file");
 
     auto positional_options_description = po::positional_options_description();
-    positional_options_description.add("input-file", -1);
+    positional_options_description.add("input", -1);
 
     po::variables_map args;
     po::store(boost::program_options::command_line_parser(argc, argv)
@@ -383,7 +383,7 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-    auto input_file = args["input-file"].as<std::string>();
+    auto input_file = args["input"].as<std::string>();
 
     auto tree = parse_program(input_file);
     auto module = compile_program(tree);
