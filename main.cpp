@@ -121,6 +121,7 @@ auto compile_program(pt::ptree const& tree) {
         for (auto& [node_name, subtree] : tree) {
             if (node_name == "Func") {
                 std::string func_name;
+                llvm::Type* return_type = llvm::Type::getVoidTy(llvm_context);
 
                 std::vector<std::string> argument_names;
                 std::vector<llvm::Type*> argument_types;
@@ -135,6 +136,12 @@ auto compile_program(pt::ptree const& tree) {
                         continue;
                     }
 
+                    if (argument_name == "returns") {
+                        return_type = get_type_by_name(argument_value);
+
+                        continue;
+                    }
+
                     auto argument_type = get_type_by_name(argument_value);
 
                     argument_names.push_back(argument_name);
@@ -145,8 +152,8 @@ auto compile_program(pt::ptree const& tree) {
                     func_name = "main";
                 }
 
-                auto func_type = llvm::FunctionType::get(
-                    llvm::Type::getVoidTy(llvm_context), argument_types, false);
+                auto func_type =
+                    llvm::FunctionType::get(return_type, argument_types, false);
 
                 auto func = llvm::Function::Create(
                     func_type, llvm::Function::ExternalLinkage, func_name,
