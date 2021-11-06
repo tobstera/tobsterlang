@@ -267,6 +267,13 @@ auto compile_program(pt::ptree const& tree) {
                 assert(values.size() == 1);
 
                 builder.CreateRet(values[0]);
+            } else if (node_name == "Call") {
+                auto name = subtree.get_child("<xmlattr>.name").data();
+                auto func = module->getFunction(name);
+
+                auto args = recurse_tree(subtree);
+
+                ret.push_back(builder.CreateCall(func, args));
             }
         }
 
