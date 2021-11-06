@@ -1,0 +1,20 @@
+<Root module="sum">
+    <Func name="add" x="Int32" y="Int32" returns="Int32">
+        <Return>
+            <Add>
+                <Load name="x"/>
+                <Load name="y"/>
+            </Add>
+        </Return>
+    </Func>
+
+    <Func name="ZdraveitePriqteliAzSumTobstera">
+        <Call name="printf">
+            <Value type="String" raw="true">%d\n</Value>
+            <Call name="add">
+                <Value type="Int32">400</Value>
+                <Value type="Int32">20</Value>
+            </Call>
+        </Call>
+    </Func>
+</Root>
