@@ -177,6 +177,11 @@ auto compile_program(pt::ptree const& tree) {
 
                 recurse_tree(subtree);
 
+                auto has_return = subtree.rbegin()->first == "Return";
+                if (!has_return) {
+                    builder.CreateRet(nullptr);
+                }
+
                 ret.push_back(func);
             } else if (node_name == "Print") {
                 auto format = subtree.get_child("<xmlattr>.format").data();
