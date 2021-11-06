@@ -264,9 +264,11 @@ auto compile_program(pt::ptree const& tree) {
                 ret.push_back(difference);
             } else if (node_name == "Return") {
                 auto values = recurse_tree(subtree);
-                assert(values.size() == 1);
-
-                builder.CreateRet(values[0]);
+                if (values.size() == 1) {
+                    builder.CreateRet(values[0]);
+                } else {
+                    builder.CreateRet(nullptr);
+                }
             } else if (node_name == "Call") {
                 auto name = subtree.get_child("<xmlattr>.name").data();
                 auto func = module->getFunction(name);
