@@ -168,6 +168,7 @@ auto compile_program(pt::ptree const& tree) {
 
                 builder.SetInsertPoint(func_body);
 
+                named_values.clear();
                 for (auto& arg : func->args()) {
                     auto arg_mem = builder.CreateAlloca(arg.getType());
                     builder.CreateStore(&arg, arg_mem);
