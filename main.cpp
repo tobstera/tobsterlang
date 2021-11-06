@@ -177,8 +177,6 @@ auto compile_program(pt::ptree const& tree) {
 
                 recurse_tree(subtree);
 
-                builder.CreateRet(nullptr);
-
                 ret.push_back(func);
             } else if (node_name == "Print") {
                 auto format = subtree.get_child("<xmlattr>.format").data();
@@ -264,6 +262,11 @@ auto compile_program(pt::ptree const& tree) {
                 }
 
                 ret.push_back(difference);
+            } else if (node_name == "Return") {
+                auto values = recurse_tree(subtree);
+                assert(values.size() == 1);
+
+                builder.CreateRet(values[0]);
             }
         }
 
