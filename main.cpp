@@ -88,6 +88,7 @@ auto parse_program(std::string const& filename) {
 typedef llvm::Type* (*type_factory_t)(llvm::LLVMContext&);
 
 auto type_by_name = std::unordered_map<std::string, type_factory_t>{
+    {"Void", reinterpret_cast<type_factory_t>(llvm::Type::getVoidTy)},
     {"Int8", reinterpret_cast<type_factory_t>(llvm::Type::getInt8Ty)},
     {"Int16", reinterpret_cast<type_factory_t>(llvm::Type::getInt16Ty)},
     {"Int32", reinterpret_cast<type_factory_t>(llvm::Type::getInt32Ty)},
