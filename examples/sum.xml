@@ -1,5 +1,6 @@
 <Root module="sum">
     <Func name="add" x="Int32" y="Int32" returns="Int32">
+        <!-- Last statement of function is implicitly returned if return type is not void -->
         <Add>
             <Load name="x"/>
             <Load name="y"/>
