@@ -1,11 +1,9 @@
 <Root module="sum">
     <Func name="add" x="Int32" y="Int32" returns="Int32">
-        <Return>
-            <Add>
-                <Load name="x"/>
-                <Load name="y"/>
-            </Add>
-        </Return>
+        <Add>
+            <Load name="x"/>
+            <Load name="y"/>
+        </Add>
     </Func>
 
     <Func name="ZdraveitePriqteliAzSumTobstera" returns="Void">
