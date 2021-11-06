@@ -8,11 +8,18 @@
     </Func>
 
     <Func name="ZdraveitePriqteliAzSumTobstera" returns="Void">
+        <Var name="x" type="Int32"/>
+        <Var name="y" type="Int32"/>
+        <Call name="scanf">
+            <Value type="String" raw="true">%d %d</Value>
+            <Ref name="x"/>
+            <Ref name="y"/>
+        </Call>
         <Call name="printf">
             <Value type="String" raw="true">%d\n</Value>
             <Call name="add">
-                <Value type="Int32">400</Value>
-                <Value type="Int32">20</Value>
+                <Load name="x"/>
+                <Load name="y"/>
             </Call>
         </Call>
     </Func>
