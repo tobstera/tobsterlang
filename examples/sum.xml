@@ -8,7 +8,7 @@
         </Return>
     </Func>
 
-    <Func name="ZdraveitePriqteliAzSumTobstera">
+    <Func name="ZdraveitePriqteliAzSumTobstera" returns="Void">
         <Call name="printf">
             <Value type="String" raw="true">%d\n</Value>
             <Call name="add">

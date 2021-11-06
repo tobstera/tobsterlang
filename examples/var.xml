@@ -1,5 +1,5 @@
 <Root module="variables">
-    <Func name="ZdraveitePriqteliAzSumTobstera">
+    <Func name="ZdraveitePriqteliAzSumTobstera" returns="Void">
         <Var name="x" type="Int32"/>
         <Store name="x">
             <Value type="Int32">35</Value>
