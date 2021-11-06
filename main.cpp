@@ -99,7 +99,8 @@ auto type_by_name = std::unordered_map<std::string, type_factory_t>{
 auto lib_funcs =
     std::unordered_map<std::string,
                        std::function<llvm::Function*(llvm::Module&)>>{
-        {"printf", [](llvm::Module& module) {
+        {"printf",
+         [](llvm::Module& module) {
              auto printf_args = std::vector<llvm::Type*>{
                  llvm::Type::getInt8PtrTy(llvm_context)};
 
@@ -113,6 +114,20 @@ auto lib_funcs =
              printf_func->setCallingConv(llvm::CallingConv::C);
 
              return printf_func;
+         }},
+        {"scanf", [](llvm::Module& module) {
+             auto scanf_args = std::vector<llvm::Type*>{
+                 llvm::Type::getInt8PtrTy(llvm_context)};
+
+             auto scanf_type = llvm::FunctionType::get(
+                 llvm::Type::getInt32Ty(llvm_context), scanf_args, true);
+
+             auto scanf_func = llvm::Function::Create(
+                 scanf_type, llvm::Function::ExternalLinkage, "scanf", module);
+
+             scanf_func->setCallingConv(llvm::CallingConv::C);
+
+             return scanf_func;
          }}};
 
 auto get_type_by_name(std::string const& name) -> llvm::Type* {
