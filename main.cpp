@@ -210,11 +210,15 @@ auto compile_program(pt::ptree const& tree) {
                     named_values[arg.getName().str()] = arg_mem;
                 }
 
-                recurse_tree(subtree);
+                auto children = recurse_tree(subtree);
 
                 auto has_return = subtree.rbegin()->first == "Return";
                 if (!has_return) {
-                    builder.CreateRet(nullptr);
+                    if (return_type->isVoidTy() || children.empty()) {
+                        builder.CreateRet(nullptr);
+                    } else {
+                        builder.CreateRet(children.back());
+                    }
                 }
 
                 ret.push_back(func);
