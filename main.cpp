@@ -282,6 +282,11 @@ auto compile_program(pt::ptree const& tree) {
                 auto var = named_values[name];
 
                 ret.push_back(builder.CreateLoad(var));
+            } else if (node_name == "Ref") {
+                auto name = subtree.get_child("<xmlattr>.name").data();
+                auto var = named_values[name];
+
+                ret.push_back(var);
             } else if (node_name == "Add") {
                 auto values = recurse_tree(subtree);
                 assert(values.size() >= 2);
