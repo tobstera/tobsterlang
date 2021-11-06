@@ -161,6 +161,13 @@ auto compile_program(pt::ptree const& tree) {
 
                 builder.SetInsertPoint(func_body);
 
+                for (auto& arg : func->args()) {
+                    auto arg_mem = builder.CreateAlloca(arg.getType());
+                    builder.CreateStore(&arg, arg_mem);
+
+                    named_values[arg.getName().str()] = arg_mem;
+                }
+
                 recurse_tree(subtree);
 
                 builder.CreateRet(nullptr);
