@@ -95,6 +95,25 @@ auto type_by_name = std::unordered_map<std::string, type_factory_t>{
     {"String", reinterpret_cast<type_factory_t>(llvm::Type::getInt8PtrTy)},
 };
 
+auto lib_funcs =
+    std::unordered_map<std::string,
+                       std::function<llvm::Function*(llvm::Module&)>>{
+        {"printf", [](llvm::Module& module) {
+             auto printf_args = std::vector<llvm::Type*>{
+                 llvm::Type::getInt8PtrTy(llvm_context)};
+
+             auto printf_type = llvm::FunctionType::get(
+                 llvm::Type::getInt32Ty(llvm_context), printf_args, true);
+
+             auto printf_func = llvm::Function::Create(
+                 printf_type, llvm::Function::ExternalLinkage, "printf",
+                 module);
+
+             printf_func->setCallingConv(llvm::CallingConv::C);
+
+             return printf_func;
+         }}};
+
 auto get_type_by_name(std::string const& name) -> llvm::Type* {
     auto type = type_by_name[name];
     if (type) {
@@ -102,6 +121,20 @@ auto get_type_by_name(std::string const& name) -> llvm::Type* {
     }
 
     assert(0 && "unknown type");
+}
+
+auto get_function_by_name(llvm::Module& module, std::string const& name) {
+    auto function = module.getFunction(name);
+    if (function) {
+        return function;
+    }
+
+    auto lib_func_it = lib_funcs.find(name);
+    if (lib_func_it != lib_funcs.end()) {
+        return lib_func_it->second(module);
+    }
+
+    throw std::runtime_error("unknown function: " + name);
 }
 
 auto compile_program(pt::ptree const& tree) {
@@ -184,31 +217,6 @@ auto compile_program(pt::ptree const& tree) {
                 }
 
                 ret.push_back(func);
-            } else if (node_name == "Print") {
-                auto format = subtree.get_child("<xmlattr>.format").data();
-                auto format_str =
-                    builder.CreateGlobalStringPtr(unescape(format));
-
-                auto printf_func = module->getFunction("printf");
-                if (!printf_func) {
-                    auto printf_args = std::vector<llvm::Type*>{
-                        llvm::Type::getInt8PtrTy(llvm_context)};
-
-                    auto printf_type = llvm::FunctionType::get(
-                        llvm::Type::getInt32Ty(llvm_context), printf_args,
-                        true);
-
-                    printf_func = llvm::Function::Create(
-                        printf_type, llvm::Function::ExternalLinkage, "printf",
-                        module.get());
-
-                    printf_func->setCallingConv(llvm::CallingConv::C);
-                }
-
-                auto printf_call_args = recurse_tree(subtree);
-                printf_call_args.insert(printf_call_args.begin(), format_str);
-
-                builder.CreateCall(printf_func, printf_call_args);
             } else if (node_name == "Var") {
                 // TODO: Global variables
                 auto name = subtree.get_child("<xmlattr>.name").data();
@@ -277,7 +285,7 @@ auto compile_program(pt::ptree const& tree) {
                 }
             } else if (node_name == "Call") {
                 auto name = subtree.get_child("<xmlattr>.name").data();
-                auto func = module->getFunction(name);
+                auto func = get_function_by_name(*module, name);
 
                 auto args = recurse_tree(subtree);
 
