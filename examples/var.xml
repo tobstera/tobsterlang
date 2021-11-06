@@ -15,7 +15,8 @@
             <Value type="Int32">1</Value>
         </Store>
 
-        <Print format="%d\n">
+        <Call name="printf">
+            <Value type="String" raw="true">%d\n</Value>
             <Sub>
                 <Add>
                     <Load name="x"/>
@@ -23,6 +24,6 @@
                 </Add>
                 <Load name="z"/>
             </Sub>
-        </Print>
+        </Call>
     </Func>
 </Root>
