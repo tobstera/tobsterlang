@@ -136,7 +136,7 @@ auto get_type_by_name(std::string const& name) -> llvm::Type* {
         return type(llvm_context);
     }
 
-    assert(0 && "unknown type");
+    throw std::runtime_error("unknown type: " + name);
 }
 
 auto get_function_by_name(llvm::Module& module, std::string const& name) {
@@ -267,7 +267,7 @@ auto compile_program(pt::ptree const& tree) {
                 } else if (type_name == "String") {
                     ret.push_back(builder.CreateGlobalStringPtr(value));
                 } else {
-                    assert(0 && "unknown type");
+                    throw std::runtime_error("unknown type: " + type_name);
                 }
             } else if (node_name == "Store") {
                 auto name = subtree.get_child("<xmlattr>.name").data();
