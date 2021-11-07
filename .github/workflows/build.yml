@@ -1,0 +1,63 @@
+name: CMake
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install dependencies
+      run: |
+        sudo apt update
+
+        # Add Kitware's APT repository
+        wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null \
+          | gpg --dearmor - \
+          | sudo tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null
+
+        sudo apt-add-repository "deb https://apt.kitware.com/ubuntu/ $(lsb_release -cs) main"
+
+        # Install CMake
+        sudo apt install -y cmake
+
+        # Install Boost
+        sudo apt install -y libboost-all-dev
+
+        # Install Clang and LLVM
+        sudo apt install -y clang-11 llvm-11
+
+        # Install Ninja
+        sudo apt install -y ninja-build
+
+    - name: Configure CMake
+      run: |
+        cmake \
+          -G Ninja \
+          -DCMAKE_C_COMPILER=clang-11 \
+          -DCMAKE_CXX_COMPILER=clang++-11 \
+          -B ${{github.workspace}}/build \
+          -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+
+    - name: Build
+      run: |
+        cmake \
+          --build ${{github.workspace}}/build \
+          --config ${{env.BUILD_TYPE}}
+
+    - name: Add binary to path
+      working-directory: ${{github.workspace}}/build
+      run: sudo mv tobsterlang /usr/bin/
+
+    - name: Run tests for examples
+      working-directory: ${{github.workspace}}/examples
+      run: ./test_examples.sh
