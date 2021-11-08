@@ -11,12 +11,12 @@
         <Var name="x" type="Int32"/>
         <Var name="y" type="Int32"/>
         <Call name="scanf">
-            <Value type="String" raw="true">%d %d</Value>
+            <Value type="String">%d %d</Value>
             <Ref name="x"/>
             <Ref name="y"/>
         </Call>
         <Call name="printf">
-            <Value type="String" raw="true">%d\n</Value>
+            <Value type="String">%d\n</Value>
             <Call name="add">
                 <Load name="x"/>
                 <Load name="y"/>

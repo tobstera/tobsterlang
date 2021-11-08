@@ -16,7 +16,7 @@
         </Store>
 
         <Call name="printf">
-            <Value type="String" raw="true">%d\n</Value>
+            <Value type="String">%d\n</Value>
             <Sub>
                 <Add>
                     <Load name="x"/>
