@@ -250,14 +250,7 @@ auto compile_program(pt::ptree const& tree) {
                 named_values[name] = var;
             } else if (node_name == "Value") {
                 auto type_name = subtree.get_child("<xmlattr>.type").data();
-                auto value = subtree.data();
-
-                auto is_raw =
-                    subtree.get_child_optional("<xmlattr>.raw").has_value();
-
-                if (is_raw) {
-                    value = unescape(value);
-                }
+                auto value = unescape(subtree.data());
 
                 auto type = get_type_by_name(type_name);
                 if (type->isIntegerTy()) {
