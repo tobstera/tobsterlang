@@ -34,6 +34,7 @@ jobs:
         sudo apt install -y libboost-all-dev
 
         # Install Clang and LLVM
+        sudo apt remove 'clang-*' 'llvm-*'
         sudo apt install -y clang-11 llvm-11
 
         # Install Ninja
