@@ -126,8 +126,7 @@ int main(int argc, char** argv) {
 
     auto input_file = options.variables["input"].as<std::string>();
 
-    Tobsterlang::Parser parser;
-    auto tree = parser.parse(input_file);
+    auto tree = Tobsterlang::Parser::parse(input_file);
 
     Tobsterlang::Codegen codegen;
     auto module = codegen.generate(tree);

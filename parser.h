@@ -7,10 +7,9 @@
 namespace Tobsterlang {
 using ASTNode = boost::property_tree::ptree;
 
-class Parser {
-public:
-    ASTNode parse(std::string const&);
-};
+namespace Parser {
+auto parse(std::string const&) -> ASTNode;
+}  // namespace Parser
 }  // namespace Tobsterlang
 
 #endif  // TOBSTERLANG_PARSER_H
