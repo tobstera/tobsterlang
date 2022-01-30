@@ -16,8 +16,9 @@
 #include <boost/program_options.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <iostream>
+#include "options.h"
+#include "parser.h"
 
-namespace pt = boost::property_tree;
 namespace po = boost::program_options;
 
 static llvm::LLVMContext llvm_context;
@@ -76,13 +77,6 @@ auto unescape(std::string const& str) {
     }
 
     return result;
-}
-
-auto parse_program(std::string const& filename) {
-    pt::ptree tree;
-    pt::read_xml(filename, tree);
-
-    return tree;
 }
 
 typedef llvm::Type* (*type_factory_t)(llvm::LLVMContext&);
@@ -153,14 +147,15 @@ auto get_function_by_name(llvm::Module& module, std::string const& name) {
     throw std::runtime_error("unknown function: " + name);
 }
 
-auto compile_program(pt::ptree const& tree) {
+auto compile_program(Tobsterlang::ASTNode const& tree) {
     auto root_node = tree.get_child("Root");
     auto module_name = root_node.get_child("<xmlattr>.module").data();
 
     auto module = std::make_unique<llvm::Module>(module_name, llvm_context);
 
-    std::function<std::vector<llvm::Value*>(pt::ptree const&)> recurse_tree =
-        [&](pt::ptree const& tree) -> std::vector<llvm::Value*> {
+    std::function<std::vector<llvm::Value*>(Tobsterlang::ASTNode const&)>
+        recurse_tree =
+            [&](Tobsterlang::ASTNode const& tree) -> std::vector<llvm::Value*> {
         if (tree.empty()) {
             return {};
         }
@@ -421,69 +416,29 @@ auto compile_module(std::unique_ptr<llvm::Module> module,
     dest.flush();
 }
 
-auto parse_optimization_level(std::string const& s) {
-    if (s.find("-O") == 0) {
-        return std::make_pair(std::string("optimization"), s.substr(2));
-    }
-
-    return std::make_pair(std::string(), std::string());
-}
-
-auto get_optimization_level(std::string const& level) {
-    if (level == "1") {
-        return llvm::PassBuilder::OptimizationLevel::O1;
-    } else if (level == "2") {
-        return llvm::PassBuilder::OptimizationLevel::O2;
-    } else if (level == "3") {
-        return llvm::PassBuilder::OptimizationLevel::O3;
-    } else if (level == "s") {
-        return llvm::PassBuilder::OptimizationLevel::Os;
-    } else if (level == "z") {
-        return llvm::PassBuilder::OptimizationLevel::Oz;
-    }
-
-    return llvm::PassBuilder::OptimizationLevel::O0;
-}
-
 int main(int argc, char** argv) {
-    auto options_description = po::options_description("options");
+    auto options = Tobsterlang::Options::parse(argc, argv);
 
-    auto opt_adder = options_description.add_options();
-
-    opt_adder("help,h", "print help message");
-    opt_adder("optimization,O", po::value<std::string>(), "optimization level");
-    opt_adder("output,o", po::value<std::string>(), "output file");
-    opt_adder("input", po::value<std::string>(), "input file");
-
-    auto positional_options_description = po::positional_options_description();
-    positional_options_description.add("input", -1);
-
-    po::variables_map args;
-    po::store(boost::program_options::command_line_parser(argc, argv)
-                  .options(options_description)
-                  .positional(positional_options_description)
-                  .extra_parser(parse_optimization_level)
-                  .run(),
-              args);
-
-    if (args.count("help")) {
-        std::cout << options_description << std::endl;
+    if (options.variables.count("help")) {
+        std::cout << options.description << std::endl;
 
         return 0;
     }
 
-    auto input_file = args["input"].as<std::string>();
+    auto input_file = options.variables["input"].as<std::string>();
 
-    auto tree = parse_program(input_file);
+    Tobsterlang::Parser parser;
+    auto tree = parser.parse(input_file);
+
     auto module = compile_program(tree);
 
     std::string object_file =
-        args.count("output")
-            ? args["output"].as<std::string>()
+        options.variables.count("output")
+            ? options.variables["output"].as<std::string>()
             : "./" + std::string(module->getName().data()) + ".o";
 
-    auto optimization_level =
-        get_optimization_level(args["optimization"].as<std::string>());
+    auto optimization_level = Tobsterlang::Options::get_optimization_level(
+        options.variables["optimization"].as<std::string>());
 
     compile_module(std::move(module), object_file, optimization_level);
 
