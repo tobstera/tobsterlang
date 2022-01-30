@@ -1,8 +1,6 @@
 #ifndef NDEBUG
 #include <llvm/IR/IRPrintingPasses.h>
 #endif
-#include <llvm/Analysis/CGSCCPassManager.h>
-#include <llvm/Analysis/LoopAnalysisManager.h>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Module.h>
 #include <llvm/MC/SubtargetFeature.h>
@@ -15,40 +13,9 @@
 #include <boost/program_options.hpp>
 #include <iostream>
 #include "codegen.h"
+#include "optimizer.h"
 #include "options.h"
 #include "parser.h"
-
-namespace po = boost::program_options;
-
-auto optimize_module(llvm::Module& module,
-                     llvm::PassBuilder::OptimizationLevel optimization_level) {
-    if (optimization_level == llvm::PassBuilder::OptimizationLevel::O0) {
-        return;
-    }
-
-    llvm::LoopAnalysisManager loop_analysis_manager;
-    llvm::FunctionAnalysisManager function_analysis_manager;
-    llvm::CGSCCAnalysisManager cgscc_analysis_manager;
-    llvm::ModuleAnalysisManager module_analysis_manager;
-
-    llvm::PassBuilder pass_builder;
-
-    function_analysis_manager.registerPass(
-        [&] { return pass_builder.buildDefaultAAPipeline(); });
-
-    pass_builder.registerModuleAnalyses(module_analysis_manager);
-    pass_builder.registerCGSCCAnalyses(cgscc_analysis_manager);
-    pass_builder.registerFunctionAnalyses(function_analysis_manager);
-    pass_builder.registerLoopAnalyses(loop_analysis_manager);
-    pass_builder.crossRegisterProxies(
-        loop_analysis_manager, function_analysis_manager,
-        cgscc_analysis_manager, module_analysis_manager);
-
-    llvm::ModulePassManager pass_manager =
-        pass_builder.buildPerModuleDefaultPipeline(optimization_level);
-
-    pass_manager.run(module, module_analysis_manager);
-}
 
 auto compile_module(std::unique_ptr<llvm::Module> module,
                     std::string const& filename,
@@ -89,7 +56,7 @@ auto compile_module(std::unique_ptr<llvm::Module> module,
     module->setTargetTriple(target_triple);
     module->setDataLayout(target_machine->createDataLayout());
 
-    optimize_module(*module, optimization_level);
+    Tobsterlang::Optimizer::optimize(*module, optimization_level);
 
     std::error_code error_code;
     llvm::raw_fd_ostream dest(filename, error_code, llvm::sys::fs::OF_None);
