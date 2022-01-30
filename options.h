@@ -22,19 +22,20 @@ auto parse_optimization_level(std::string const& s) {
 }
 
 auto get_optimization_level(std::string const& level) {
-    if (level == "1") {
+    switch (level[0]) {
+    case '1':
         return llvm::PassBuilder::OptimizationLevel::O1;
-    } else if (level == "2") {
+    case '2':
         return llvm::PassBuilder::OptimizationLevel::O2;
-    } else if (level == "3") {
+    case '3':
         return llvm::PassBuilder::OptimizationLevel::O3;
-    } else if (level == "s") {
+    case 's':
         return llvm::PassBuilder::OptimizationLevel::Os;
-    } else if (level == "z") {
+    case 'z':
         return llvm::PassBuilder::OptimizationLevel::Oz;
+    default:
+        return llvm::PassBuilder::OptimizationLevel::O0;
     }
-
-    return llvm::PassBuilder::OptimizationLevel::O0;
 }
 
 Options parse(int argc, char** argv) {
@@ -60,8 +61,7 @@ Options parse(int argc, char** argv) {
                   .run(),
               args);
 
-    return Options{.description = options_description,
-                   .variables = args};
+    return Options{.description = options_description, .variables = args};
 }
 }  // namespace Tobsterlang::Options
 
