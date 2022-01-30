@@ -18,6 +18,7 @@
 #include <iostream>
 #include "options.h"
 #include "parser.h"
+#include "utils.h"
 
 namespace po = boost::program_options;
 
@@ -25,59 +26,6 @@ static llvm::LLVMContext llvm_context;
 static llvm::IRBuilder<> builder(llvm_context);
 
 static std::unordered_map<std::string, llvm::AllocaInst*> named_values;
-
-auto unescape(std::string const& str) {
-    std::string result;
-    result.reserve(str.size());
-
-    for (auto i = 0u; i < str.size(); ++i) {
-        if (str[i] == '\\') {
-            switch (str[++i]) {
-            case '\\':
-                result += '\\';
-                break;
-            case '\'':
-                result += '\'';
-                break;
-            case '\"':
-                result += '\"';
-                break;
-            case '0':
-                result += '\0';
-                break;
-            case 'a':
-                result += '\a';
-                break;
-            case 'b':
-                result += '\b';
-                break;
-            case 'f':
-                result += '\f';
-                break;
-            case 'n':
-                result += '\n';
-                break;
-            case 'r':
-                result += '\r';
-                break;
-            case 't':
-                result += '\t';
-                break;
-            case 'v':
-                result += '\v';
-                break;
-            default:
-                std::cerr << "Unknown escape sequence: \\" << str[i]
-                          << std::endl;
-                break;
-            }
-        } else {
-            result += str[i];
-        }
-    }
-
-    return result;
-}
 
 typedef llvm::Type* (*type_factory_t)(llvm::LLVMContext&);
 
@@ -245,7 +193,7 @@ auto compile_program(Tobsterlang::ASTNode const& tree) {
                 named_values[name] = var;
             } else if (node_name == "Value") {
                 auto type_name = subtree.get_child("<xmlattr>.type").data();
-                auto value = unescape(subtree.data());
+                auto value = Tobsterlang::Utils::unescape(subtree.data());
 
                 auto type = get_type_by_name(type_name);
                 if (type->isIntegerTy()) {
